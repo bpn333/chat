@@ -63,7 +63,7 @@ function App() {
     if (user) {
       await messagesRef.add({
         content: message,
-        time: new Date().toLocaleString(),
+        time: new Date().toUTCString(),
         uid: user.uid,
         sender: user.photoURL
       });
