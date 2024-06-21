@@ -7,7 +7,7 @@ import { collection, updateDoc, addDoc, getDoc, onSnapshot, doc, setDoc } from '
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import CallIcon from '@mui/icons-material/Call';
 import AddIcCallIcon from '@mui/icons-material/AddIcCall';
-import UserIcon from './component/UserIcon';
+import { Navigate } from 'react-router-dom';
 const servers = {
     iceServers: [
         {
@@ -22,6 +22,7 @@ let localStream = null;
 let remoteStream = null;
 
 const Call = () => {
+    const [otherName, setOtherName] = useState('')
     const [id, setId] = useState('')
     const { user, auth, firestore, darkMode, setDarkMode } = useFirebase();
 
@@ -45,39 +46,36 @@ const Call = () => {
     };
     webCamOn()
     async function createCall() {
-        // Reference Firestore collections for signaling
         const callDoc = doc(collection(firestore, 'calls'));
         const offerCandidates = collection(callDoc, 'offerCandidates');
         const answerCandidates = collection(callDoc, 'answerCandidates');
 
         setId(callDoc.id);
 
-        // Get candidates for caller, save to db
         pc.onicecandidate = (event) => {
             event.candidate && addDoc(offerCandidates, event.candidate.toJSON());
         };
 
-        // Create offer
         const offerDescription = await pc.createOffer();
         await pc.setLocalDescription(offerDescription);
 
         const offer = {
             sdp: offerDescription.sdp,
             type: offerDescription.type,
+            caller: user.displayName
         };
 
         await setDoc(callDoc, { offer });
 
-        // Listen for remote answer
         onSnapshot(callDoc, (snapshot) => {
             const data = snapshot.data();
+            data.answer.receiver && setOtherName(data.answer.receiver)
             if (!pc.currentRemoteDescription && data?.answer) {
                 const answerDescription = new RTCSessionDescription(data.answer);
                 pc.setRemoteDescription(answerDescription);
             }
         });
 
-        // When answered, add candidate to peer connection
         onSnapshot(answerCandidates, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
@@ -101,6 +99,7 @@ const Call = () => {
         const callData = (await getDoc(callDoc)).data();
 
         const offerDescription = callData.offer;
+        setOtherName(callData.offer.caller)
         await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
 
         const answerDescription = await pc.createAnswer();
@@ -109,6 +108,7 @@ const Call = () => {
         const answer = {
             type: answerDescription.type,
             sdp: answerDescription.sdp,
+            receiver: user.displayName
         };
 
         await updateDoc(callDoc, { answer });
@@ -128,8 +128,7 @@ const Call = () => {
     };
 
     return (
-        <>
-            <CssBaseline />
+        <>{user ? <><CssBaseline />
             <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -137,7 +136,7 @@ const Call = () => {
                 minHeight: '100vh',
             }}>
                 <Heading
-                    title="😎 Pro Chat App 😎"
+                    title="😎 Pro Call 😎"
                     userImg={user.photoURL}
                     setDarkMode={setDarkMode}
                     darkMode={darkMode}
@@ -157,11 +156,11 @@ const Call = () => {
                     borderRadius: '10px',
                 }}>
                     <Box>
-                        <Typography variant="h5" sx={{ mb: 2 }}>Local Stream</Typography>
+                        <Typography variant="h5" sx={{ mb: 2 }}>local - {user.displayName}</Typography>
                         <video ref={webcamVideoRef} autoPlay playsInline style={{ maxWidth: '100%' }}></video>
                     </Box>
                     <Box>
-                        <Typography variant="h5" sx={{ mb: 2 }}>Remote Stream</Typography>
+                        <Typography variant="h5" sx={{ mb: 2 }}>remote - {otherName}</Typography>
                         <video ref={remoteVideoRef} autoPlay playsInline style={{ maxWidth: '100%' }}></video>
                     </Box>
                 </Box>
@@ -170,9 +169,9 @@ const Call = () => {
                     <Button onClick={createCall} sx={{ mr: 2, backgroundColor: '#2979FF', color: '#FFFFFF' }}><AddIcCallIcon sx={{ margin: '10px' }} /> Create Call</Button>
                     <TextField value={id} onChange={(e) => setId(e.target.value)} variant="outlined" size="small" sx={{ margin: '10px', width: '300px', height: '100%' }} />
                     <Button onClick={answerCall} sx={{ mr: 2, backgroundColor: '#00C853', color: '#FFFFFF' }}><CallIcon sx={{ margin: '10px' }} /> Answer Call</Button>
-                    <Button onClick={signOut} sx={{ backgroundColor: '#FF1744', color: '#FFFFFF' }}><CallEndIcon sx={{ margin: '10px' }} /> End Call</Button>
+                    <Button onClick={() => window.location.href = "/"} sx={{ backgroundColor: '#FF1744', color: '#FFFFFF' }}><CallEndIcon sx={{ margin: '10px' }} /> End Call</Button>
                 </Box>
-            </Box>
+            </Box></> : <Navigate to="/" />}
         </>
     );
 }
