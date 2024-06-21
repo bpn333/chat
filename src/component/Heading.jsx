@@ -6,6 +6,9 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import UserIcon from "./UserIcon";
 import LogoutIcon from '@mui/icons-material/Logout';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import CallIcon from '@mui/icons-material/Call';
+import { useLocation } from 'react-router-dom';
+import ChatIcon from '@mui/icons-material/Chat';
 
 function MenuThing({ setDarkMode, darkMode, userImg, userName, userSignOut }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -32,7 +35,24 @@ function MenuThing({ setDarkMode, darkMode, userImg, userName, userSignOut }) {
     userSignOut()
     handleClose()
   }
-
+  function redirectProCall() {
+    handleClose()
+    window.location.href = "/call"
+  }
+  function redirectProChat() {
+    handleClose()
+    window.location.href = "/chat"
+  }
+  function isInChat() {
+    const location = useLocation();
+    const currentPath = location.pathname;
+    if (currentPath == '/chat') {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
   return (
     <>
       <IconButton color="inherit" onClick={toggleDrawer}>
@@ -46,6 +66,18 @@ function MenuThing({ setDarkMode, darkMode, userImg, userName, userSignOut }) {
             </ListItemIcon>
             <ListItemText primary={userName} />
           </ListItemButton>
+          {isInChat() ? <ListItemButton onClick={redirectProCall}>
+            <ListItemIcon>
+              <CallIcon />
+            </ListItemIcon>
+            <ListItemText primary='😎 pro call 😎' />
+          </ListItemButton> :
+            <ListItemButton onClick={redirectProChat}>
+              <ListItemIcon>
+                <ChatIcon />
+              </ListItemIcon>
+              <ListItemText primary='😎 pro chat 😎' />
+            </ListItemButton>}
           <ListItemButton onClick={() => {
             window.open('https://github.com/bpn333');
             handleClose()
@@ -79,12 +111,12 @@ function Title({ title }) {
   );
 }
 
-function Heading({ setDarkMode, darkMode, userImg, userName, userSignOut }) {
+function Heading({ setDarkMode, darkMode, userImg, userName, userSignOut, title }) {
   return (
     <AppBar position="static">
       <Toolbar>
         <MenuThing setDarkMode={setDarkMode} darkMode={darkMode} userImg={userImg} userName={userName} userSignOut={userSignOut} />
-        <Title />
+        <Title title={title} />
         <Button color="inherit">
           <UserIcon img={userImg} />
         </Button>

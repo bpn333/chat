@@ -4,7 +4,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import { useFirebase } from './FirebaseProvider';
+import { useFirebase } from './Initializer';
 
 const SignIn = ({ signInWithGoogle }) => (
     <Box sx={{ textAlign: 'center', marginTop: 4 }}>
@@ -16,10 +16,10 @@ const SignIn = ({ signInWithGoogle }) => (
         >
             Sign in with Google
         </Button>
-        <Typography color="text.primary" sx={{ fontSize: '20px' }}>
+        <Typography sx={{ fontSize: '20px' }}>
             Welcome to 😎 Pro Chat 😎
         </Typography>
-        <Typography color="text.secondary">
+        <Typography>
             a totally original chatting platform
         </Typography>
     </Box>
