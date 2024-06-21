@@ -10,13 +10,13 @@ import { CssBaseline } from '@mui/material';
 const Chat = () => {
   const { user, auth, firestore, darkMode, setDarkMode } = useFirebase();
   const messagesRef = collection(firestore, 'messages');
-  const messagesQuery = query(messagesRef, orderBy('time'), limit(13));
+  const messagesQuery = query(messagesRef, orderBy('time', 'desc'), limit(13));
   const [messages] = useCollectionData(messagesQuery);
   const sendMessage = async (message) => {
     if (user) {
       await addDoc(messagesRef, {
         content: message,
-        time: new Date().toUTCString(),
+        time: new Date().toISOString(),
         uid: user.uid,
         sender: user.photoURL,
       });
