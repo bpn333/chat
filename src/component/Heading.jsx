@@ -113,7 +113,7 @@ function Title({ title }) {
 
 function Heading({ setDarkMode, darkMode, userImg, userName, userSignOut, title }) {
   return (
-    <AppBar position="static">
+    <AppBar position="sticky">
       <Toolbar>
         <MenuThing setDarkMode={setDarkMode} darkMode={darkMode} userImg={userImg} userName={userName} userSignOut={userSignOut} />
         <Title title={title} />

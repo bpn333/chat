@@ -8,6 +8,7 @@ import CallEndIcon from '@mui/icons-material/CallEnd';
 import CallIcon from '@mui/icons-material/Call';
 import AddIcCallIcon from '@mui/icons-material/AddIcCall';
 import { Navigate } from 'react-router-dom';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 const servers = {
     iceServers: [
         {
@@ -25,27 +26,32 @@ const Call = () => {
     const [otherName, setOtherName] = useState('')
     const [id, setId] = useState('')
     const { user, auth, firestore, darkMode, setDarkMode } = useFirebase();
-
+    const [isInCall, setIsInCall] = useState(false)
     const webcamVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
     const webCamOn = async () => {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        remoteStream = new MediaStream();
-        localStream.getTracks().forEach((track) => {
-            pc.addTrack(track, localStream);
-        });
-        pc.ontrack = (event) => {
-            event.streams[0].getTracks().forEach((track) => {
-                remoteStream.addTrack(track);
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            remoteStream = new MediaStream();
+            localStream.getTracks().forEach((track) => {
+                pc.addTrack(track, localStream);
             });
-        };
-        if (webcamVideoRef.current && remoteVideoRef.current) {
-            webcamVideoRef.current.srcObject = localStream;
-            remoteVideoRef.current.srcObject = remoteStream;
+            pc.ontrack = (event) => {
+                event.streams[0].getTracks().forEach((track) => {
+                    remoteStream.addTrack(track);
+                });
+            };
+            if (webcamVideoRef.current && remoteVideoRef.current) {
+                webcamVideoRef.current.srcObject = localStream;
+                remoteVideoRef.current.srcObject = remoteStream;
+            }
+        }
+        catch {
+            console.log('error setting webcam and mic')
         }
     };
-    webCamOn()
     async function createCall() {
+        setIsInCall(true)
         const callDoc = doc(collection(firestore, 'calls'));
         const offerCandidates = collection(callDoc, 'offerCandidates');
         const answerCandidates = collection(callDoc, 'answerCandidates');
@@ -69,7 +75,9 @@ const Call = () => {
 
         onSnapshot(callDoc, (snapshot) => {
             const data = snapshot.data();
-            data.answer.receiver && setOtherName(data.answer.receiver)
+            if (data.answer) {
+                data.answer.receiver && setOtherName(data.answer.receiver)
+            }
             if (!pc.currentRemoteDescription && data?.answer) {
                 const answerDescription = new RTCSessionDescription(data.answer);
                 pc.setRemoteDescription(answerDescription);
@@ -84,9 +92,11 @@ const Call = () => {
                 }
             });
         });
+        await webCamOn();
     };
 
     async function answerCall() {
+        setIsInCall(true);
         const callId = id;
         const callDoc = doc(collection(firestore, 'calls'), callId);
         const answerCandidates = collection(callDoc, 'answerCandidates');
@@ -121,6 +131,7 @@ const Call = () => {
                 }
             });
         });
+        await webCamOn();
     };
 
     const signOut = () => {
@@ -144,34 +155,52 @@ const Call = () => {
                     userSignOut={signOut}
                 />
 
-                <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px',
-                    textAlign: 'center',
-                    width: '100%',
-                    maxWidth: '100vw',
-                    margin: '20px auto',
-                    padding: '20px',
-                    borderRadius: '10px',
-                }}>
-                    <Box>
-                        <Typography variant="h5" sx={{ mb: 2 }}>local - {user.displayName}</Typography>
-                        <video ref={webcamVideoRef} autoPlay playsInline style={{ maxWidth: '100%' }}></video>
+                {isInCall ? <>
+                    <Box sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '20px',
+                        textAlign: 'center',
+                        width: '100%',
+                        maxWidth: '100vw',
+                        margin: '20px auto',
+                        padding: '20px',
+                        borderRadius: '10px',
+                    }}>
+                        <Box>
+                            <Typography variant="h5" sx={{ mb: 2 }}>local - {user.displayName}</Typography>
+                            <Box
+                                component="video"
+                                ref={webcamVideoRef}
+                                autoPlay
+                                playsInline
+                                sx={{ maxWidth: '100%' }}
+                            ></Box>
+                        </Box>
+                        <Box>
+                            <Typography variant="h5" sx={{ mb: 2 }}>remote - {otherName}</Typography>
+                            <Box
+                                component="video"
+                                ref={remoteVideoRef}
+                                autoPlay
+                                playsInline
+                                sx={{ maxWidth: '100%' }}
+                            ></Box>
+                        </Box>
                     </Box>
-                    <Box>
-                        <Typography variant="h5" sx={{ mb: 2 }}>remote - {otherName}</Typography>
-                        <video ref={remoteVideoRef} autoPlay playsInline style={{ maxWidth: '100%' }}></video>
-                    </Box>
-                </Box>
 
-                <Box sx={{ mt: 4, textAlign: 'center' }}>
-                    <Button onClick={createCall} sx={{ mr: 2, backgroundColor: '#2979FF', color: '#FFFFFF' }}><AddIcCallIcon sx={{ margin: '10px' }} /> Create Call</Button>
-                    <TextField value={id} onChange={(e) => setId(e.target.value)} variant="outlined" size="small" sx={{ margin: '10px', width: '300px', height: '100%' }} />
-                    <Button onClick={answerCall} sx={{ mr: 2, backgroundColor: '#00C853', color: '#FFFFFF' }}><CallIcon sx={{ margin: '10px' }} /> Answer Call</Button>
-                    <Button onClick={() => window.location.href = "/"} sx={{ backgroundColor: '#FF1744', color: '#FFFFFF' }}><CallEndIcon sx={{ margin: '10px' }} /> End Call</Button>
-                </Box>
-            </Box></> : <Navigate to="/" />}
+                    <Box sx={{ mt: 4, textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
+                        <><Typography variant='h6'>{id}</Typography><Button onClick={() => navigator.clipboard.writeText(id)}><ContentCopyIcon /></Button></>
+                        <Button onClick={() => window.location.href = "/call"} sx={{ backgroundColor: '#FF1744', color: '#FFFFFF' }}><CallEndIcon sx={{ margin: '10px' }} /> End Call</Button>
+                    </Box></>
+                    :
+                    <Box sx={{ margin: 5, textAlign: 'center', display: 'flex', flexDirection: 'column', width: '50vw', justifyContent: 'space-around', height: '50vh' }}>
+                        <TextField value={id} onChange={(e) => setId(e.target.value)} variant="standard" size="small" label='call id' />
+                        <Button onClick={createCall} sx={{ mr: 2, backgroundColor: '#2979FF', color: '#FFFFFF' }}><AddIcCallIcon /> Create Call</Button>
+                        <Button onClick={answerCall} sx={{ mr: 2, backgroundColor: '#00C853', color: '#FFFFFF' }} disabled={!id}><CallIcon /> Answer Call</Button>
+                    </Box>}
+            </Box>
+        </> : <Navigate to="/" />}
         </>
     );
 }
