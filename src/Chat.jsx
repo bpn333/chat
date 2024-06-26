@@ -10,7 +10,7 @@ import { CssBaseline } from '@mui/material';
 const Chat = () => {
   const { user, auth, firestore, darkMode, setDarkMode } = useFirebase();
   const messagesRef = collection(firestore, 'messages');
-  const messagesQuery = query(messagesRef, orderBy('time'), limit(13));
+  const messagesQuery = query(messagesRef, orderBy('time', 'desc'), limit(13));
   const [messages] = useCollectionData(messagesQuery);
   const sendMessage = async (message) => {
     if (user) {
@@ -38,7 +38,7 @@ const Chat = () => {
             userName={user.displayName}
             userSignOut={signOut}
           />
-          <Body messages={messages} darkMode={darkMode} currentUser={user} />
+          <Body messages={messages && messages.reverse()} darkMode={darkMode} currentUser={user} />
           <Foot sendMsg={sendMessage} />
           <Box sx={{ height: '50px' }} />
         </Box>
