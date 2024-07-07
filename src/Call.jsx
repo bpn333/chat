@@ -22,9 +22,21 @@ const pc = new RTCPeerConnection(servers);
 let localStream = null;
 let remoteStream = null;
 
+function initializeId() {
+    let url = new URL(window.location);
+    let room_id = url.searchParams.get('id')
+    if (room_id) {
+        return room_id
+    }
+}
+function updateURL(new_id) {
+    let url = new URL(window.location);
+    url.searchParams.set('id', new_id);
+    window.history.pushState({}, '', url);
+}
 const Call = () => {
     const [otherName, setOtherName] = useState('')
-    const [id, setId] = useState('')
+    const [id, setId] = useState(initializeId())
     const { user, auth, firestore, darkMode, setDarkMode } = useFirebase();
     const [isInCall, setIsInCall] = useState(false)
     const webcamVideoRef = useRef(null);
@@ -58,7 +70,7 @@ const Call = () => {
         const answerCandidates = collection(callDoc, 'answerCandidates');
 
         setId(callDoc.id);
-
+        updateURL(callDoc.id)
         pc.onicecandidate = (event) => {
             event.candidate && addDoc(offerCandidates, event.candidate.toJSON());
         };
@@ -191,7 +203,7 @@ const Call = () => {
                     </Box>
 
                     <Box sx={{ mt: 4, textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
-                        <><Typography variant='h6'>{id}</Typography><Button onClick={() => navigator.clipboard.writeText(id)}><ContentCopyIcon /></Button></>
+                        <><Typography variant='h6'>{id}</Typography><Button onClick={() => navigator.clipboard.writeText(window.location.href)}><ContentCopyIcon /></Button></>
                         <Button onClick={() => window.location.href = "/call"} sx={{ backgroundColor: '#FF1744', color: '#FFFFFF' }}><CallEndIcon sx={{ margin: '10px' }} /> End Call</Button>
                     </Box></>
                     :
