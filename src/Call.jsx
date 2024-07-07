@@ -51,7 +51,8 @@ const Call = () => {
         }
     };
     async function createCall() {
-        setIsInCall(true)
+        setIsInCall(true);
+        await webCamOn();
         const callDoc = doc(collection(firestore, 'calls'));
         const offerCandidates = collection(callDoc, 'offerCandidates');
         const answerCandidates = collection(callDoc, 'answerCandidates');
@@ -92,11 +93,11 @@ const Call = () => {
                 }
             });
         });
-        await webCamOn();
     };
 
     async function answerCall() {
         setIsInCall(true);
+        await webCamOn();
         const callId = id;
         const callDoc = doc(collection(firestore, 'calls'), callId);
         const answerCandidates = collection(callDoc, 'answerCandidates');
@@ -131,7 +132,6 @@ const Call = () => {
                 }
             });
         });
-        await webCamOn();
     };
 
     const signOut = () => {
