@@ -175,6 +175,7 @@ const Call = () => {
                                 autoPlay
                                 playsInline
                                 sx={{ maxWidth: '100%' }}
+                                muted
                             ></Box>
                         </Box>
                         <Box>
